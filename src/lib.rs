@@ -7,13 +7,20 @@ use core::{marker::PhantomData, ops::Range};
 mod storage;
 use storage::*;
 
-// #[cfg(feature = "vec")]
-pub mod vec;
+#[cfg(feature = "vec")]
+mod vec;
+#[cfg(feature = "vec")]
+pub use vec::*;
 
-// #[cfg(feature = "array")]
-pub mod array;
+#[cfg(feature = "array")]
+mod array;
+#[cfg(feature = "array")]
+pub use array::*;
 
-/// A way to store the same type of data into uneven slices. Can be iterated by slice or by items.
+/// A generic container to store a single type of data into unevenly sized slices.
+/// Can be iterated by slice or by items. You probably want to use SliceArray (for no_std)
+/// or SliceVec instead, unless you want to provide your own container, in which case you
+/// need to implement the Storage<T> trait.
 #[derive(Debug, Default)]
 pub struct SliceMap<S: Storage<T>, T> {
     storage: S,              // Generic storage

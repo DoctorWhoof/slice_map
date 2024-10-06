@@ -1,6 +1,8 @@
 use crate::{SliceMap, Storage};
 use core::ops::Range;
 
+/// Requires "array" feature. A very simple "vec-like" container with fixed size. Pushing items beyond
+/// its capacity will do nothing aside from returning an empty error.
 #[derive(Debug)]
 pub struct ArrayVec<T, const ITEMS: usize> {
     data: [T; ITEMS],
@@ -24,23 +26,25 @@ impl<T, const ITEMS: usize> ArrayVec<T, ITEMS> {
         self.head = 0;
     }
 
-    pub fn push(&mut self, item: T) {
+    pub fn push(&mut self, item: T) -> Result<(),()> {
         if self.head >= ITEMS {
-            return;
+            return Err(());
         }
         self.data[self.head] = item;
         self.head += 1;
+        Ok(())
     }
 
     /// Extends the ArrayVec with items from the iterator.
-    pub fn extend<I>(&mut self, source: I)
+    pub fn extend<I>(&mut self, source: I) -> Result<(),()>
     where
         I: IntoIterator<Item = T>,
     {
         let mut iter = source.into_iter();
         while let Some(item) = iter.next() {
-            self.push(item);
+            self.push(item)?;
         }
+        Ok(())
     }
 }
 
@@ -62,13 +66,14 @@ impl<T, const ITEMS: usize> Storage<T> for ArrayVec<T, ITEMS> {
         self.data.iter()
     }
 
-    fn extend_from_iter<I: IntoIterator<Item = T>>(&mut self, iter: I) {
-        self.extend(iter);
+    fn extend_from_iter<I: IntoIterator<Item = T>>(&mut self, iter: I) -> Result<(),()> {
+        self.extend(iter)?;
+        Ok(())
     }
 }
 
-/// A SliceMap that uses a fixed size ArrayVec for storage. You must specify the capacity
-/// for both the number of items and the number of slices.
+/// Requires "array" feature. A SliceMap that uses a fixed size ArrayVec for storage.
+/// You must specify the capacity for both the number of items and the number of slices.
 pub type SliceArray<T, const ITEMS: usize, const SLICES: usize> =
     SliceMap<ArrayVec<T, ITEMS>, T>;
 

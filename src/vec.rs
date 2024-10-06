@@ -20,12 +20,14 @@ impl<T> Storage<T> for Vec<T> {
         self.iter()
     }
 
-    fn extend_from_iter<I: IntoIterator<Item = T>>(&mut self, iter: I) {
+    fn extend_from_iter<I: IntoIterator<Item = T>>(&mut self, iter: I) -> Result<(),()> {
         self.extend(iter);
+        Ok(())
     }
 }
 
-/// A SliceMap that uses a vec for storage
+
+/// Requires "vec" feature. A SliceMap that uses a vec for storage
 pub type SliceVec<T> = SliceMap<Vec<T>, T>;
 
 impl<T> SliceMap<Vec<T>, T> {
