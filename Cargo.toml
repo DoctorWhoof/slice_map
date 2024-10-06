@@ -1,11 +1,12 @@
 [package]
 name = "slice_map"
-version = "0.1.4"
+version = "0.1.5"
 edition = "2021"
 description = "A generic container to store a single type of data into unevenly sized slices."
 repository = "https://github.com/DoctorWhoof/slice_map.git"
 documentation = "https://docs.rs/slice_map/latest/slice_map/"
 license = "MIT"
+categories = ["no-std"]
 
 [dependencies]
 
