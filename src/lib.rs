@@ -58,14 +58,15 @@ where
     }
 
     /// Adds a slice with all items from an iterator of owned T items.
-    pub fn add_items<I>(&mut self, new_items: I)
+    pub fn add_items<I>(&mut self, new_items: I) -> Result<(),()>
     where
         I: IntoIterator<Item = T>,
     {
         let start = self.storage.len() as u32;
-        self.storage.extend_from_iter(new_items); // Extend the generic storage
+        self.storage.extend_from_iter(new_items)?; // Extend the generic storage
         let end = self.storage.len() as u32;
         self.slices.push(start..end);
+        Ok(())
     }
 
     /// Returns a slice with the desired range
