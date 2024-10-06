@@ -1,4 +1,4 @@
-use crate::{Storage, Slice, StrResult};
+use crate::{Slice, Storage, StrResult};
 use core::{marker::PhantomData, ops::Range};
 
 /// A generic container to store a single type of data into unevenly sized slices.
@@ -48,16 +48,24 @@ where
         self.slices.len()
     }
 
-    /// Adds a slice with all items from an iterator of owned T items.
+    /// Adds a slice with all items from an iterator of owned T items. Will
+    /// return an error if the capacity of [u32::MAX] items is reached.
     pub fn add_items<ITER>(&mut self, new_items: ITER) -> StrResult
     where
         ITER: IntoIterator<Item = T>,
     {
-        let start = self.storage.len();
+        let start: u32 = self
+            .storage
+            .len()
+            .try_into()
+            .map_err(|_| "SliceMap: Capacity exceeded")?;
         self.storage.extend_from_iter(new_items)?; // Extend the generic storage
-        let end = self.storage.len();
-        self.slices
-            .push_item(start.try_into().unwrap()..end.try_into().unwrap())?;
+        let end: u32 = self
+            .storage
+            .len()
+            .try_into()
+            .map_err(|_| "SliceMap: Capacity exceeded")?;
+        self.slices.push_item(start..end)?;
         Ok(())
     }
 
