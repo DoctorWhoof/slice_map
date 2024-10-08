@@ -36,13 +36,13 @@ fn test_vec() {
 fn test_vec_default() {
     use crate::SliceVec;
     let mut slicemap = SliceVec::default();
-    test_storage(&mut slicemap, 10);
+    test_storage(&mut slicemap.storage, 10);
 }
 
 #[test]
 #[cfg(feature = "array")]
 fn test_array_vec() {
-    use crate::array::ArrayVec;
+    use crate::ArrayVec;
     let values: ArrayVec<i32, 100> = ArrayVec::default();
     let ranges: ArrayVec<Slice, 10> = ArrayVec::default();
     let mut slicemap = SliceMap::new(values, ranges);

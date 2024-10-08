@@ -1,9 +1,7 @@
-use crate::{Slice, SliceMap, Storage, StrResult};
+use crate::{Storage, StrResult};
 use core::ops::Range;
 
 /// Requires "array" feature. A very simple "vec-like" container with fixed size.
-/// Cumbersome to use due to the const generics involved, you should use SliceVec
-/// unless you have a strict "no_std" requirement.
 /// Pushing items beyond its capacity will do nothing aside from returning an error.
 #[derive(Debug)]
 pub struct ArrayVec<T, const ITEM_COUNT: usize> {
@@ -29,7 +27,7 @@ impl<T, const ITEM_COUNT: usize> ArrayVec<T, ITEM_COUNT> {
     }
 
     pub fn get(&self, index: impl Into<usize>) -> Option<&T> {
-        let index:usize = index.into();
+        let index: usize = index.into();
         self.data.get(index)
     }
 
@@ -73,7 +71,7 @@ impl<T, const ITEM_COUNT: usize> Storage<T> for ArrayVec<T, ITEM_COUNT> {
         self.data.iter()
     }
 
-    fn get_item(&self, index:impl Into<usize>) -> Option<&T> {
+    fn get_item(&self, index: impl Into<usize>) -> Option<&T> {
         self.get(index)
     }
 
@@ -85,21 +83,5 @@ impl<T, const ITEM_COUNT: usize> Storage<T> for ArrayVec<T, ITEM_COUNT> {
     fn extend_from_iter<I: IntoIterator<Item = T>>(&mut self, iter: I) -> StrResult {
         self.extend(iter)?;
         Ok(())
-    }
-}
-
-/// Requires "array" feature. A SliceMap that uses fixed size ArrayVecs for storage.
-/// You must specify the capacity for both the number of items and the number of slices.
-pub type SliceArray<T, const ITEM_COUNT: usize, const SLICE_COUNT: usize> =
-    SliceMap<T, ArrayVec<T, ITEM_COUNT>, ArrayVec<Range<u32>, SLICE_COUNT>>;
-
-impl<T, const ITEM_COUNT: usize, const SLICE_COUNT: usize>
-SliceMap<T, ArrayVec<T, ITEM_COUNT>, ArrayVec<Slice, SLICE_COUNT>>
-where
-    T: Default,
-{
-    /// Returns a SliceMap pre-populated with default ArrayVec as storage.
-    pub fn new_with_arrayvec() -> Self {
-        Self::new(ArrayVec::default(), ArrayVec::default())
     }
 }

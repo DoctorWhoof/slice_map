@@ -2,13 +2,12 @@ use crate::{Slice, Storage, StrResult};
 use core::{marker::PhantomData, ops::Range};
 
 /// A generic container to store a single type of data into unevenly sized slices.
-/// Can be iterated by slice or by items. You probably want to use SliceArray (for no_std)
+/// Can be iterated by slice or by items. You probably want to use SliceArray (for _no_std_)
 /// or SliceVec instead, unless you want to provide your own container, in which case you
-/// need to implement the Storage<T> trait.
-#[derive(Debug, Default)]
+/// need to implement the [Storage] trait.
+#[derive(Default, Debug)]
 pub struct SliceMap<T, I, S>
 where
-    T: Default,
     I: Storage<T>,
     S: Storage<Slice>,
 {
@@ -19,7 +18,6 @@ where
 
 impl<T, I, S> SliceMap<T, I, S>
 where
-    T: Default,
     I: Storage<T>,
     S: Storage<Slice>,
 {
@@ -95,7 +93,6 @@ where
 /// Iterator for SliceMap that returns slices of items.
 pub struct SliceIter<'a, T, I, S>
 where
-    T: Default,
     I: Storage<T>,
     S: Storage<Slice>,
 {
@@ -105,7 +102,6 @@ where
 
 impl<'a, T, I, S> Iterator for SliceIter<'a, T, I, S>
 where
-    T: Default,
     I: Storage<T>,
     S: Storage<Slice>,
 {
