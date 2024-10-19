@@ -58,4 +58,9 @@ where
     pub fn iter_items(&self) -> impl Iterator<Item = &T> {
         self.storage.iter_items()
     }
+
+    #[inline(always)]
+    pub fn remove_slice(&mut self, index:usize) {
+        self.storage.remove_slice(index);
+    }
 }

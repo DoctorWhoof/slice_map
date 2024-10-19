@@ -32,6 +32,11 @@ where
     }
 
     #[inline(always)]
+    pub fn items(&self) -> &Vec<T> {
+        &self.storage.items
+    }
+
+    #[inline(always)]
     pub fn items_len(&self) -> usize {
         self.storage.items_len()
     }
@@ -63,6 +68,11 @@ where
     pub fn iter_items(&self) -> impl Iterator<Item = &T> {
         self.storage.iter_items()
     }
+
+    #[inline(always)]
+    pub fn remove_slice(&mut self, index:usize) {
+        self.storage.remove_slice(index);
+    }
 }
 
 // Implement the Storage trait for Vec<T>.
@@ -83,7 +93,7 @@ impl<T> Storage<T> for Vec<T> {
     }
 
     #[inline(always)]
-    fn iter_items(&self) -> core::slice::Iter<T> {
+    fn items(&self) -> core::slice::Iter<T> {
         self.iter()
     }
 
@@ -103,5 +113,25 @@ impl<T> Storage<T> for Vec<T> {
     fn push_item(&mut self, item: T) -> StrResult {
         self.push(item);
         Ok(())
+    }
+
+    #[inline(always)]
+    fn remove(&mut self, index: impl Into<usize>) -> Option<T> {
+        let i:usize = index.into();
+        if i < self.len(){
+            Some(self.remove(i))
+        } else {
+            None
+        }
+    }
+
+    #[inline(always)]
+    fn drain(&mut self, range: impl core::ops::RangeBounds<usize>) {
+        self.drain(range);
+    }
+
+    #[inline(always)]
+    fn items_mut(&mut self) -> core::slice::IterMut<T> {
+        self.iter_mut()
     }
 }

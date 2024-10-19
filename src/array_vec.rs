@@ -67,7 +67,7 @@ impl<T, const ITEM_COUNT: usize> Storage<T> for ArrayVec<T, ITEM_COUNT> {
         self.data.get(range)
     }
 
-    fn iter_items(&self) -> core::slice::Iter<T> {
+    fn items(&self) -> core::slice::Iter<T> {
         self.data.iter()
     }
 
@@ -83,5 +83,17 @@ impl<T, const ITEM_COUNT: usize> Storage<T> for ArrayVec<T, ITEM_COUNT> {
     fn extend_from_iter<I: IntoIterator<Item = T>>(&mut self, iter: I) -> StrResult {
         self.extend(iter)?;
         Ok(())
+    }
+
+    fn remove(&mut self, _index: impl Into<usize>) -> Option<T> {
+        todo!()
+    }
+
+    fn drain(&mut self, _range: impl core::ops::RangeBounds<usize>) {
+        todo!()
+    }
+
+    fn items_mut(&mut self) -> core::slice::IterMut<T> {
+        todo!()
     }
 }

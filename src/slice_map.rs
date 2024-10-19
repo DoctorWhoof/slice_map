@@ -11,8 +11,8 @@ where
     I: Storage<T>,
     S: Storage<Slice>,
 {
-    storage: I, // Generic storage
-    slices: S,  // Ranges that map to individual item slices
+    pub(crate) items: I, // Generic items
+    pub(crate) slices: S,  // Ranges that map to individual item slices
     _marker: PhantomData<T>,
 }
 
@@ -21,10 +21,10 @@ where
     I: Storage<T>,
     S: Storage<Slice>,
 {
-    /// Returns a new SliceMap containing the provided storage object.
-    pub fn new(storage: I, slices: S) -> Self {
+    /// Returns a new SliceMap containing the provided items object.
+    pub fn new(items: I, slices: S) -> Self {
         Self {
-            storage,
+            items,
             slices,
             _marker: PhantomData,
         }
@@ -32,13 +32,13 @@ where
 
     /// Clears the SliceMap.
     pub fn clear(&mut self) {
-        self.storage.reset();
+        self.items.reset();
         self.slices.reset();
     }
 
     /// How many items are contained in all slices.
     pub fn items_len(&self) -> usize {
-        self.storage.len()
+        self.items.len()
     }
 
     /// How many slices are contained in the SliceMap.
@@ -53,13 +53,13 @@ where
         ITER: IntoIterator<Item = T>,
     {
         let start: u32 = self
-            .storage
+            .items
             .len()
             .try_into()
             .map_err(|_| "SliceMap: Capacity exceeded")?;
-        self.storage.extend_from_iter(new_items)?; // Extend the generic storage
+        self.items.extend_from_iter(new_items)?; // Extend the generic items
         let end: u32 = self
-            .storage
+            .items
             .len()
             .try_into()
             .map_err(|_| "SliceMap: Capacity exceeded")?;
@@ -70,7 +70,7 @@ where
     /// Returns a slice with the desired range
     pub fn get_slice(&self, index: usize) -> Option<&[T]> {
         let range = self.slices.get_item(index)?;
-        self.storage.get_slice(Range {
+        self.items.get_slice(Range {
             start: range.start as usize,
             end: range.end as usize,
         })
@@ -86,7 +86,27 @@ where
 
     /// Returns an iterator for each individual item.
     pub fn iter_items(&self) -> impl Iterator<Item = &T> {
-        self.storage.iter_items() // Returns an iterator over individual items in the storage
+        self.items.items() // Returns an iterator over individual items in the items
+    }
+
+    /// Removes a slice by index.
+    pub fn remove_slice(&mut self, slice_idx: usize) {
+        if slice_idx >= self.slices.len() {
+            return;
+        }
+        let range = self.slices.remove(slice_idx).unwrap();
+
+        // Remove the items in the range from items
+        self.items.drain(range.start as usize .. range.end as usize);
+
+        // Adjust the ranges of all subsequent slices
+        for slice in self.slices.items_mut() {
+            if slice.start >= range.end {
+                let offset = range.end - range.start;
+                slice.start = u32::try_from(slice.start - offset).expect("Index out of bounds");
+                slice.end = u32::try_from(slice.end - offset).expect("Index out of bounds");
+            }
+        }
     }
 }
 

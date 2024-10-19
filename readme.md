@@ -1,6 +1,9 @@
-SliceMap provides a container that allows iterating directly all of its items, or iterating slices of uneven sizes.
+### Update:
+Removed "SliceArray" for now. Focusing on a solid SliceVec implementation, then will reinstate SliceArray and update it to match SliceVec's features.
 
-Two implementations are provided out of the box, [SliceVec] and [SliceArray], but you can extend [SliceMap] to use your own storage by implementing the [Storage] trait.
+SliceMap provides a container that allows iterating directly all of its items, or iterating through non-overlapping slices of varying sizes. You can only insert new items in groups that will become a new slice.
+
+One implementation is provided out of the box, [SliceVec], but you can extend [SliceMap] to use your own storage by implementing the [Storage] trait.
 
 ### Examples
 
@@ -33,13 +36,9 @@ for item in slicevec.iter_items(){
 ```
 
 ### Features:
+#### "default"
+The "vec" feature is enabled by default. If you want to use a no_std environment without Vecs, you can
+disable default features and implement "[Storage]" for your desired container, which will allow you to create a SliceMap with it.
+
 #### "vec"
 Enables [SliceVec], which is a SliceMap implementation using Vecs for all its storage. This is the easiest to use option.
-
-#### "array"
-Enables [SliceArray], which is a "no_std" option that uses a simple ArrayVec with const generics for storage. This is more cumbersome to use, since the user has to provide the capacity for both the item storage and the slice range storage.
-
-#### "default"
-The "vec" feature is enabled by default. Make sure you use
-```default-features = false, features = ["array"]```
-in your cargo.toml if you wish to use slice_map in a no_std environment.

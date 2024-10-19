@@ -2,9 +2,6 @@
 #![doc = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/readme.md"))]
 
 // Main.
-mod array_vec;
-pub use array_vec::*;
-
 mod slice_map;
 pub use slice_map::*;
 
@@ -22,9 +19,13 @@ mod slice_vec;
 pub use slice_vec::*;
 
 // #[cfg(feature = "array")]
-mod slice_array;
+// mod slice_array;
 // #[cfg(feature = "array")]
-pub use slice_array::*;
+// pub use slice_array::*;
+// #[cfg(feature = "array")]
+// mod array_vec;
+// #[cfg(feature = "array")]
+// pub use array_vec::*;
 
 // Tests.
 
