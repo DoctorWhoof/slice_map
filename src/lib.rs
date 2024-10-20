@@ -86,7 +86,7 @@ impl<V> SliceMap<V> {
 
 
     /// Returns a slice with the desired range
-    pub fn slice_get(&self, key: SliceKey) -> Option<&[V]> {
+    pub fn get_slice(&self, key: SliceKey) -> Option<&[V]> {
         let range = self.slices.get(key)?;
         self.items.get(Range {
             start: range.start as usize,
