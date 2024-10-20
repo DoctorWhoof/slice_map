@@ -9,11 +9,7 @@ license = "MIT"
 categories = ["no-std"]
 
 [dependencies]
-
-[features]
-vec = []
-# array = []
-default = ["vec"]
+slotmap = { version = "1.0.7", default-features = false }
 
 [package.metadata.docs.rs]
 all-features = true

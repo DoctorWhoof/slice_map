@@ -1,9 +1,7 @@
 ### Update:
-Removed "SliceArray" for now. Focusing on a solid SliceVec implementation, then will reinstate SliceArray and update it to match SliceVec's features.
+Dramatically simplified from a generic SliceMap that supported different storages to a Concrete SliceMap that always uses Vec<V> for values and SlotMap<SliceKey, Range<u32>> for slice ranges. This now allows removing items and the existing Slice Keys remain valid (except for the removed one), thanks to the SlotMap.
 
-SliceMap provides a container that allows iterating directly all of its items, or iterating through non-overlapping slices of varying sizes. You can only insert new items in groups that will become a new slice.
-
-One implementation is provided out of the box, [SliceVec], but you can extend [SliceMap] to use your own storage by implementing the [Storage] trait.
+[SliceMap] provides a container that allows iterating directly all of its items, or iterating through non-overlapping slices of varying sizes. You can only insert new items in groups that will become a new slice.
 
 ### Examples
 
@@ -11,25 +9,25 @@ A good use would be storing the points for polygons of different point counts, b
 
 Here's the code for a simpler example with i32 values:
 ```rust
-use slice_map::SliceVec;
-let mut slicevec = SliceVec::default();
+use slice_map::SliceMap;
+let mut slices = SliceMap::default();
 
 // Adding items can fail when using SliceArray and the capacity is reached,
 // but is unlikely to fail with SliceVec.
-slicevec.add_items([1, 2, 3, 4, 5]).ok();
-slicevec.add_items([6, 7]).ok();
-slicevec.add_items([8, 9, 10]).ok();
+let a = slices.add_items([1, 2, 3, 4, 5]);
+let b = slices.add_items([6, 7]);
+let c = slices.add_items([8, 9, 10]);
 
 // Iterating over slices
-let mut slices = slicevec.iter_slices();
-assert_eq!(slices.next().unwrap(), [1, 2, 3, 4, 5]);
-assert_eq!(slices.next().unwrap(), [6, 7]);
-assert_eq!(slices.next().unwrap(), [8, 9, 10]);
-assert_eq!(slices.next(), None);
+let mut slice_iter = slices.iter_slices();
+assert_eq!(slice_iter.next().unwrap(), [1, 2, 3, 4, 5]);
+assert_eq!(slice_iter.next().unwrap(), [6, 7]);
+assert_eq!(slice_iter.next().unwrap(), [8, 9, 10]);
+assert_eq!(slice_iter.next(), None);
 
 // Iterating over all items
 let mut i = 1;
-for item in slicevec.iter_items(){
+for item in slices.iter_items(){
     assert_eq!(i, *item);
     i += 1
 }
@@ -42,3 +40,6 @@ disable default features and implement "[Storage]" for your desired container, w
 
 #### "vec"
 Enables [SliceVec], which is a SliceMap implementation using Vecs for all its storage. This is the easiest to use option.
+
+### "slotmap"
+Enables [SliceSlot], which uses SlotMaps for storage. Will add the slotmap crate as a dependency.
