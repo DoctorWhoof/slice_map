@@ -1,9 +1,9 @@
-### Update:
-Dramatically simplified from a generic SliceMap that supported different storages to a Concrete SliceMap that always uses Vec<V> for values and SlotMap<SliceKey, Range<u32>> for slice ranges. This now allows removing items and the existing Slice Keys remain valid (except for the removed one), thanks to the SlotMap.
+### 0.1.8 Update
+Dramatically simplified from a generic SliceMap that supported different storages to a Concrete SliceMap that always uses Vec<V> for values and SlotMap<SliceKey, Range<u32>> for slice ranges. This now allows removing slices and the existing Slice Keys remain valid (except for the removed one), thanks to the SlotMap.
 
 [SliceMap] provides a container that allows iterating directly all of its items, or iterating through non-overlapping slices of varying sizes. You can only insert new items in groups that will become a new slice.
 
-### Examples
+### Example
 
 A good use would be storing the points for polygons of different point counts, but in a way where all those points are laid out continuously in memory. Each slice is effectively a new polygon, and drawing all polygons at once can be very CPU cache-friendly.
 
@@ -32,14 +32,3 @@ for item in slices.iter_items(){
     i += 1
 }
 ```
-
-### Features:
-#### "default"
-The "vec" feature is enabled by default. If you want to use a no_std environment without Vecs, you can
-disable default features and implement "[Storage]" for your desired container, which will allow you to create a SliceMap with it.
-
-#### "vec"
-Enables [SliceVec], which is a SliceMap implementation using Vecs for all its storage. This is the easiest to use option.
-
-### "slotmap"
-Enables [SliceSlot], which uses SlotMaps for storage. Will add the slotmap crate as a dependency.
