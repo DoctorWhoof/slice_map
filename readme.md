@@ -14,8 +14,7 @@ Here's a simpler example with i32 values:
 use slice_map::SliceMap;
 let mut slices = SliceMap::default();
 
-// Adding items can fail when using SliceArray and the capacity is reached,
-// but is unlikely to fail with SliceVec.
+// Adding items returns a SliceKey
 let a = slices.add_items([1, 2, 3, 4, 5]);
 let b = slices.add_items([6, 7]);
 let c = slices.add_items([8, 9, 10]);
