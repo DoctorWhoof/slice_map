@@ -9,8 +9,8 @@ pub(crate) mod test;
 pub type ResultOrStr<T> = Result<T, &'static str>;
 pub type Slice = core::ops::Range<u32>;
 
-use slotmap::{basic::Values, SlotMap};
 use core::{marker::PhantomData, ops::Range};
+use slotmap::{basic::Values, SlotMap};
 
 extern crate alloc;
 use alloc::vec::Vec;
@@ -24,10 +24,10 @@ slotmap::new_key_type! {
 /// Can be iterated by slice or by items. You probably want to use SliceArray (for _no_std_)
 /// or SliceVec instead, unless you want to provide your own container, in which case you
 /// need to implement the [Storage] trait.
-#[derive(Default, Debug)]
-pub struct SliceMap<V>{
-    pub(crate) items: Vec<V>, // Generic items
-    pub(crate) slices: SlotMap<SliceKey, Slice>,  // Ranges that map to individual item slices
+#[derive(Default, Debug, Clone)]
+pub struct SliceMap<V> {
+    pub(crate) items: Vec<V>,                    // Generic items
+    pub(crate) slices: SlotMap<SliceKey, Slice>, // Ranges that map to individual item slices
     _marker_values: PhantomData<V>,
 }
 
@@ -36,6 +36,15 @@ impl<V> SliceMap<V> {
     pub fn new() -> Self {
         Self {
             items: Vec::new(),
+            slices: SlotMap::with_key(),
+            _marker_values: PhantomData,
+        }
+    }
+
+    /// Returns a new SliceMap with the specified initial capacity.
+    pub fn with_capacity(cap: usize) -> Self {
+        Self {
+            items: Vec::with_capacity(cap),
             slices: SlotMap::with_key(),
             _marker_values: PhantomData,
         }
@@ -58,18 +67,10 @@ impl<V> SliceMap<V> {
     where
         ITER: IntoIterator<Item = V>,
     {
-        let start: u32 = self
-            .items
-            .len()
-            .try_into()
-            .unwrap();
+        let start: u32 = self.items.len().try_into().unwrap();
         // Extend the generic items
         self.items.extend(new_items);
-        let end: u32 = self
-            .items
-            .len()
-            .try_into()
-            .unwrap();
+        let end: u32 = self.items.len().try_into().unwrap();
         self.slices.insert(start..end)
     }
 
@@ -78,12 +79,10 @@ impl<V> SliceMap<V> {
         self.items.len()
     }
 
-
     /// How many slices are contained in the SliceMap.
     pub fn slices_len(&self) -> usize {
         self.slices.len()
     }
-
 
     /// Returns a slice with the desired range
     pub fn get_slice(&self, key: SliceKey) -> Option<&[V]> {
@@ -102,6 +101,14 @@ impl<V> SliceMap<V> {
         }
     }
 
+    /// Returns an iterator for slices of items along with their keys.
+    pub fn iter_keys_and_slices(&self) -> KeySliceIter<V> {
+        KeySliceIter {
+            slice_map: &self,
+            slices: self.slices.iter(),
+        }
+    }
+
     /// Returns an iterator for each individual item.
     pub fn iter_items(&self) -> impl Iterator<Item = &V> {
         self.items.iter() // Returns an iterator over individual items in the items
@@ -113,7 +120,8 @@ impl<V> SliceMap<V> {
         let removed_slice = self.slices.remove(key)?;
 
         // Remove the items in the range from items
-        self.items.drain(removed_slice.start as usize .. removed_slice.end as usize);
+        self.items
+            .drain(removed_slice.start as usize..removed_slice.end as usize);
 
         // Adjust the slices of all subsequent slices
         let offset = removed_slice.end - removed_slice.start;
@@ -130,16 +138,42 @@ impl<V> SliceMap<V> {
 
 /// Iterator for SliceMap that returns slices of items.
 pub struct SliceIter<'a, V> {
-    slice_map: &'a SliceMap<V>,
-    slices: Values<'a, SliceKey, Slice>,
+    pub slice_map: &'a SliceMap<V>,
+    pub slices: Values<'a, SliceKey, Slice>,
 }
 
 impl<'a, V> Iterator for SliceIter<'a, V> {
     type Item = &'a [V];
 
     fn next(&mut self) -> Option<Self::Item> {
-        if let Some(slice) = self.slices.next(){
-            self.slice_map.items.get(slice.start as usize .. slice.end as usize)
+        if let Some(slice) = self.slices.next() {
+            self.slice_map
+                .items
+                .get(slice.start as usize..slice.end as usize)
+        } else {
+            None
+        }
+    }
+}
+
+
+/// Iterator for SliceMap that returns slices of items along with their keys.
+pub struct KeySliceIter<'a, V> {
+    pub slice_map: &'a SliceMap<V>,
+    pub slices: slotmap::basic::Iter<'a, SliceKey, Slice>,
+}
+
+impl<'a, V> Iterator for KeySliceIter<'a, V> {
+    type Item = (SliceKey, &'a [V]);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        // Get the next key and slice pair
+        if let Some((key, slice)) = self.slices.next() {
+            // Attempt to retrieve the slice of items
+            self.slice_map
+                .items
+                .get(slice.start as usize..slice.end as usize)
+                .map(|item_slice| (key, item_slice))
         } else {
             None
         }
