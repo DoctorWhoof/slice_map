@@ -21,9 +21,7 @@ slotmap::new_key_type! {
 }
 
 /// A generic container to store a single type of data into unevenly sized slices.
-/// Can be iterated by slice or by items. You probably want to use SliceArray (for _no_std_)
-/// or SliceVec instead, unless you want to provide your own container, in which case you
-/// need to implement the [Storage] trait.
+/// Can be iterated by slice or by items.
 #[derive(Default, Debug, Clone)]
 pub struct SliceMap<V> {
     pub(crate) items: Vec<V>,                    // Generic items
