@@ -9,7 +9,7 @@ pub(crate) mod test;
 pub type ResultOrStr<T> = Result<T, &'static str>;
 pub type Slice = core::ops::Range<u32>;
 
-use core::{marker::PhantomData, ops::Range};
+use core::ops::Range;
 use slotmap::{basic::Values, SlotMap};
 
 extern crate alloc;
@@ -28,7 +28,6 @@ slotmap::new_key_type! {
 pub struct SliceMap<V> {
     pub(crate) items: Vec<V>,                    // Generic items
     pub(crate) slices: SlotMap<SliceKey, Slice>, // Ranges that map to individual item slices
-    _marker_values: PhantomData<V>,
 }
 
 impl<V> SliceMap<V> {
@@ -37,7 +36,6 @@ impl<V> SliceMap<V> {
         Self {
             items: Vec::new(),
             slices: SlotMap::with_key(),
-            _marker_values: PhantomData,
         }
     }
 
@@ -46,7 +44,6 @@ impl<V> SliceMap<V> {
         Self {
             items: Vec::with_capacity(cap),
             slices: SlotMap::with_key(),
-            _marker_values: PhantomData,
         }
     }
 
