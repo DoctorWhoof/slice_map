@@ -1,47 +1,31 @@
-#![no_std]
-#![doc = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/readme.md"))]
-
-// Tests.
-#[cfg(test)]
-pub(crate) mod test;
-
-// Modules
-mod traits;
-pub use traits::*;
-
-mod iter;
-pub use iter::*;
-
-use core::{marker::PhantomData, ops::Range};
-use slotmap::{Key, SecondaryMap, SlotMap};
+use core::ops::Range;
+use slotmap::{Key, SlotMap};
 
 extern crate alloc;
 use alloc::vec::Vec;
+use crate::SliceContainer;
 
-/// This generic SliceMap needs to be provided a Key type, a Value type and a Storage type.
-/// Use [MainSliceMap] and [SecSliceMap] for storage using SlotMap and SecondarySlotMap, respectively.
+use super::{Slice, iter::*};
+
+/// A generic container to store a single type of data into unevenly sized slices.
+/// Can be iterated by slice or by items.
 #[derive(Default, Debug, Clone)]
-pub struct SliceMap<K, V, S>
-where
-    K: Key,
-    S: SliceStorage<K, Range<u32>>,
+pub struct SliceMap<K, V>
+where K: Key,
+    // S: SliceContainer
 {
-    pub(crate) items: Vec<V>, // Generic items
-    pub(crate) slices: S,     // Generic slice storage
-    type_key: PhantomData<K>,
+    pub(crate) items: Vec<V>,                    // Generic items
+    pub(crate) slices: SlotMap<K, Slice>, // Ranges that map to individual item slices
 }
 
-impl<K, V, S> SliceMap<K, V, S>
-where
-    K: Key,
-    S: SliceStorage<K, Range<u32>> + Default,
+impl<K, V> SliceMap<K, V>
+where K: Key
 {
     /// Returns a new SliceMap containing the provided items object.
     pub fn new() -> Self {
         Self {
             items: Vec::new(),
-            slices: S::default(),
-            type_key: Default::default(),
+            slices: SlotMap::with_key(),
         }
     }
 
@@ -49,15 +33,14 @@ where
     pub fn with_capacity(cap: usize) -> Self {
         Self {
             items: Vec::with_capacity(cap),
-            slices: S::default(),
-            type_key: Default::default(),
+            slices: SlotMap::with_key(),
         }
     }
 
     /// Clears the SliceMap.
     pub fn clear(&mut self) {
         self.items.clear();
-        self.slices = S::default();
+        self.slices.clear();
     }
 
     /// Returns a slice with all items in all slices.
@@ -72,6 +55,7 @@ where
         ITER: IntoIterator<Item = V>,
     {
         let start: u32 = self.items.len().try_into().unwrap();
+        // Extend the generic items
         self.items.extend(new_items);
         let end: u32 = self.items.len().try_into().unwrap();
         self.slices.insert(start..end)
@@ -84,17 +68,20 @@ where
 
     /// How many slices are contained in the SliceMap.
     pub fn slices_len(&self) -> usize {
-        self.slices.iter().count()
+        self.slices.len()
     }
 
     /// Returns a slice with the desired range
     pub fn get_slice(&self, key: K) -> Option<&[V]> {
         let range = self.slices.get(key)?;
-        self.items.get(range.start as usize..range.end as usize)
+        self.items.get(Range {
+            start: range.start as usize,
+            end: range.end as usize,
+        })
     }
 
     /// Returns an iterator for slices of items.
-    pub fn iter_slices(&self) -> SliceIter<K, V, S> {
+    pub fn iter_slices(&self) -> SliceIter<K, V, Self> {
         SliceIter {
             slice_map: &self,
             slices: self.slices.values(),
@@ -103,7 +90,7 @@ where
     }
 
     /// Returns an iterator for slices of items along with their keys.
-    pub fn iter_keys_and_slices(&self) -> KeySliceIter<K, V, S> {
+    pub fn iter_keys_and_slices(&self) -> KeySliceIter<K, V, Self> {
         KeySliceIter {
             slice_map: &self,
             slices: self.slices.iter(),
@@ -118,7 +105,7 @@ where
 
     /// Removes a slice by key. Warning: Will cause all items to "shift" to occupy the removed space,
     /// and all slices will be updated with the new indices.
-    pub fn remove_slice(&mut self, key: K) -> Option<Range<u32>> {
+    pub fn remove_slice(&mut self, key: K) -> Option<Slice> {
         let removed_slice = self.slices.remove(key)?;
 
         // Remove the items in the range from items
@@ -135,28 +122,5 @@ where
         }
 
         Some(removed_slice)
-    }
-}
-
-/// SliceMap that uses [slotmap::SlotMap] for range storage
-pub type MainSliceMap<K, V> = SliceMap<K, V, SlotMap<K, Range<u32>>>;
-
-/// SliceMap that uses [slotmap::SecondaryMap] for range storage
-pub type SecSliceMap<K, V> = SliceMap<K, V, SecondaryMap<K, Range<u32>>>;
-
-impl<K, V> SecSliceMap<K, V>
-where
-    K: Key,
-{
-    /// Creates a new slice with all items from an iterator of owned V items.
-    /// Will panic if the capacity of [u32::MAX] items is reached.
-    pub fn add_items_with_key<ITER>(&mut self, new_items: ITER, key:K)
-    where
-        ITER: IntoIterator<Item = V>,
-    {
-        let start: u32 = self.items.len().try_into().unwrap();
-        self.items.extend(new_items);
-        let end: u32 = self.items.len().try_into().unwrap();
-        self.slices.insert(key, start..end);
     }
 }

@@ -11,11 +11,16 @@ A good use would be storing the points for polygons with different point counts,
 
 Here's a simpler example with i32 values:
 ```rust
-use slice_map::SliceMap;
-let mut slices = SliceMap::default();
+use slice_map::MainSliceMap;
+
+slotmap::new_key_type!{
+    pub struct TestKey;
+}
+
+let mut slices = MainSliceMap::<TestKey, i32>::default();
 
 // Adding items returns a SliceKey
-let a = slices.add_items([1, 2, 3, 4, 5]);
+let _a = slices.add_items([1, 2, 3, 4, 5]);
 let b = slices.add_items([6, 7]);
 let c = slices.add_items([8, 9, 10]);
 
@@ -25,6 +30,7 @@ assert_eq!(slice_iter.next().unwrap(), [1, 2, 3, 4, 5]);
 assert_eq!(slice_iter.next().unwrap(), [6, 7]);
 assert_eq!(slice_iter.next().unwrap(), [8, 9, 10]);
 assert_eq!(slice_iter.next(), None);
+drop(slice_iter);
 
 // Iterating over all items
 let mut i = 1;
