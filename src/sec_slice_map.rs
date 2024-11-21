@@ -1,56 +1,41 @@
-#![no_std]
-#![doc = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/readme.md"))]
-
-// Modules.
-#[cfg(test)]
-pub(crate) mod test;
-
-mod sec_slice_map;
-pub use sec_slice_map::*;
-
-pub mod iter;
-use iter::*;
-
-// Main.
 use core::ops::Range;
-use slotmap::SlotMap;
 
-extern crate alloc;
 use alloc::vec::Vec;
+use slotmap::{Key, SecondaryMap};
 
-type Slice = core::ops::Range<u32>;
+use crate::*;
 
-slotmap::new_key_type! {
-    /// A unique key generated every time you insert a new slice with [SliceMap::add_items()].
-    pub struct SliceKey;
-}
 
-/// A generic container to store a single type of data into unevenly sized slices.
-/// Can be iterated by slice or by items.
+/// Unlike SliceMap, SecSliceMap requires an existing key every time you insert new items since it uses
+/// [slotmap::SecondaryMap] to store the internal ranges.
 #[derive(Default, Debug, Clone)]
-pub struct SliceMap<V> {
+pub struct SecSliceMap<K, V>
+where K:Key
+{
     pub(crate) items: Vec<V>,                    // Generic items
-    pub(crate) slices: SlotMap<SliceKey, Slice>, // Ranges that map to individual item slices
+    pub(crate) slices: SecondaryMap<K, Slice>, // Ranges that map to individual item slices
 }
 
-impl<V> SliceMap<V> {
-    /// Returns a new SliceMap containing the provided items object.
+impl<K, V> SecSliceMap<K, V>
+where K:Key
+{
+    /// Returns a new SecSliceMap containing the provided items object.
     pub fn new() -> Self {
         Self {
             items: Vec::new(),
-            slices: SlotMap::with_key(),
+            slices: SecondaryMap::default(),
         }
     }
 
-    /// Returns a new SliceMap with the specified initial capacity.
+    /// Returns a new SecSliceMap with the specified initial capacity.
     pub fn with_capacity(cap: usize) -> Self {
         Self {
             items: Vec::with_capacity(cap),
-            slices: SlotMap::with_key(),
+            slices: SecondaryMap::default(),
         }
     }
 
-    /// Clears the SliceMap.
+    /// Clears the SecSliceMap.
     pub fn clear(&mut self) {
         self.items.clear();
         self.slices.clear();
@@ -63,7 +48,7 @@ impl<V> SliceMap<V> {
 
     /// Creates a new slice with all items from an iterator of owned V items.
     /// Will panic if the capacity of [u32::MAX] items is reached.
-    pub fn add_items<ITER>(&mut self, new_items: ITER) -> SliceKey
+    pub fn add_items<ITER>(&mut self, key:K, new_items: ITER)
     where
         ITER: IntoIterator<Item = V>,
     {
@@ -71,7 +56,7 @@ impl<V> SliceMap<V> {
         // Extend the generic items
         self.items.extend(new_items);
         let end: u32 = self.items.len().try_into().unwrap();
-        self.slices.insert(start..end)
+        self.slices.insert(key, start..end);
     }
 
     /// How many items are contained in all slices.
@@ -79,13 +64,13 @@ impl<V> SliceMap<V> {
         self.items.len()
     }
 
-    /// How many slices are contained in the SliceMap.
+    /// How many slices are contained in the SecSliceMap.
     pub fn slices_len(&self) -> usize {
         self.slices.len()
     }
 
     /// Returns a slice with the desired range
-    pub fn get_slice(&self, key: SliceKey) -> Option<&[V]> {
+    pub fn get_slice(&self, key: K) -> Option<&[V]> {
         let range = self.slices.get(key)?;
         self.items.get(Range {
             start: range.start as usize,
@@ -94,16 +79,16 @@ impl<V> SliceMap<V> {
     }
 
     /// Returns an iterator for slices of items.
-    pub fn iter_slices(&self) -> SliceIter<V> {
-        SliceIter {
+    pub fn iter_slices(&self) -> SecSliceIter<K,V> {
+        SecSliceIter {
             slice_map: &self,
             slices: self.slices.values(),
         }
     }
 
     /// Returns an iterator for slices of items along with their keys.
-    pub fn iter_keys_and_slices(&self) -> KeySliceIter<V> {
-        KeySliceIter {
+    pub fn iter_keys_and_slices(&self) -> SecKeySliceIter<K,V> {
+        SecKeySliceIter {
             slice_map: &self,
             slices: self.slices.iter(),
         }
@@ -116,7 +101,7 @@ impl<V> SliceMap<V> {
 
     /// Removes a slice by key. Warning: Will cause all items to "shift" to occupy the removed space,
     /// and all slices will be updated with the new indices.
-    pub fn remove_slice(&mut self, key: SliceKey) -> Option<Slice> {
+    pub fn remove_slice(&mut self, key: K) -> Option<Slice> {
         let removed_slice = self.slices.remove(key)?;
 
         // Remove the items in the range from items
