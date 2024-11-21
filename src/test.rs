@@ -1,4 +1,4 @@
-use crate::MainSliceMap;
+use crate::SlotSliceMap;
 use slotmap::new_key_type;
 
 extern crate alloc;
@@ -14,7 +14,7 @@ new_key_type! {
 
 #[test]
 fn test_basic() {
-    let mut slicemap = MainSliceMap::<TestKey, i32>::new();
+    let mut slicemap = SlotSliceMap::<TestKey, i32>::new();
     let max_slices = 10;
     let mut item_count = 1;
     let mut item_len = 0;
@@ -31,7 +31,7 @@ fn test_basic() {
 
 #[test]
 fn test_remove() {
-    let mut slicemap = MainSliceMap::<TestKey, i32>::new();
+    let mut slicemap = SlotSliceMap::<TestKey, i32>::new();
 
     let a = slicemap.add_items([1, 2, 3, 4, 5]);
     let b = slicemap.add_items([6, 7]);
@@ -83,7 +83,7 @@ fn test_remove() {
 #[test]
 fn non_default_values() {
     struct Test; // No default implementation
-    let mut slices = MainSliceMap::<TestKey, Test>::new();
+    let mut slices = SlotSliceMap::<TestKey, Test>::new();
     slices.add_items([Test, Test, Test]);
     slices.add_items([Test]);
     assert_eq!(slices.items_len(), 4);

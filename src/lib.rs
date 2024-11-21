@@ -1,4 +1,4 @@
-#![no_std]
+// #![no_std]
 #![doc = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/readme.md"))]
 
 // Tests.
@@ -13,13 +13,13 @@ mod iter;
 pub use iter::*;
 
 use core::{marker::PhantomData, ops::Range};
-use slotmap::{Key, SecondaryMap, SlotMap};
+use slotmap::{Key, SecondaryMap, SlotMap, SparseSecondaryMap};
 
 extern crate alloc;
 use alloc::vec::Vec;
 
 /// This generic SliceMap needs to be provided a Key type, a Value type and a Storage type.
-/// Use [MainSliceMap] and [SecSliceMap] for storage using SlotMap and SecondarySlotMap, respectively.
+/// Use [SlotSliceMap] and [SecSliceMap] for storage using SlotMap and SecondarySlotMap, respectively.
 #[derive(Default, Debug, Clone)]
 pub struct SliceMap<K, V, S>
 where
@@ -63,18 +63,6 @@ where
     /// Returns a slice with all items in all slices.
     pub fn items(&self) -> &[V] {
         &self.items
-    }
-
-    /// Creates a new slice with all items from an iterator of owned V items.
-    /// Will panic if the capacity of [u32::MAX] items is reached.
-    pub fn add_items<ITER>(&mut self, new_items: ITER) -> K
-    where
-        ITER: IntoIterator<Item = V>,
-    {
-        let start: u32 = self.items.len().try_into().unwrap();
-        self.items.extend(new_items);
-        let end: u32 = self.items.len().try_into().unwrap();
-        self.slices.insert(start..end)
     }
 
     /// How many items are contained in all slices.
@@ -139,7 +127,24 @@ where
 }
 
 /// SliceMap that uses [slotmap::SlotMap] for range storage
-pub type MainSliceMap<K, V> = SliceMap<K, V, SlotMap<K, Range<u32>>>;
+pub type SlotSliceMap<K, V> = SliceMap<K, V, SlotMap<K, Range<u32>>>;
+
+impl<K, V> SlotSliceMap<K, V>
+where
+    K: Key,
+{
+    /// Creates a new slice with all items from an iterator of owned V items.
+    /// Will panic if the capacity of [u32::MAX] items is reached.
+    pub fn add_items<ITER>(&mut self, new_items: ITER) -> K
+    where
+        ITER: IntoIterator<Item = V>,
+    {
+        let start: u32 = self.items.len().try_into().unwrap();
+        self.items.extend(new_items);
+        let end: u32 = self.items.len().try_into().unwrap();
+        self.slices.insert(start..end)
+    }
+}
 
 /// SliceMap that uses [slotmap::SecondaryMap] for range storage
 pub type SecSliceMap<K, V> = SliceMap<K, V, SecondaryMap<K, Range<u32>>>;
@@ -150,7 +155,27 @@ where
 {
     /// Creates a new slice with all items from an iterator of owned V items.
     /// Will panic if the capacity of [u32::MAX] items is reached.
-    pub fn add_items_with_key<ITER>(&mut self, new_items: ITER, key:K)
+    pub fn add_items<ITER>(&mut self, key: K, new_items: ITER)
+    where
+        ITER: IntoIterator<Item = V>,
+    {
+        let start: u32 = self.items.len().try_into().unwrap();
+        self.items.extend(new_items);
+        let end: u32 = self.items.len().try_into().unwrap();
+        self.slices.insert(key, start..end);
+    }
+}
+
+/// SliceMap that uses [slotmap::SparseSecondaryMap] for range storage
+pub type SparseSliceMap<K, V> = SliceMap<K, V, SparseSecondaryMap<K, Range<u32>>>;
+
+impl<K, V> SparseSliceMap<K, V>
+where
+    K: Key,
+{
+    /// Creates a new slice with all items from an iterator of owned V items.
+    /// Will panic if the capacity of [u32::MAX] items is reached.
+    pub fn add_items<ITER>(&mut self, key: K, new_items: ITER)
     where
         ITER: IntoIterator<Item = V>,
     {

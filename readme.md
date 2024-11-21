@@ -1,9 +1,13 @@
-### 0.1.8 Update
-Dramatically simplified from a generic SliceMap that supported different storages to a more concrete SliceMap that always uses Vec<V> for values and SlotMap<SliceKey, Range<u32>> for slice ranges. This now allows removing slices and the existing Slice Keys remain valid (except for the removed one), thanks to the SlotMap.
+### 0.2.4 Update
+SliceMap is a project driven by another personal project, and its design follows the needs of that project. As a result, I had to go back to the idea of a Generic SliceMap that uses a Storage trait to pick different Storage structs.
+
+Instead of [SliceMap] you should use the new type aliases, [SlotSliceMap] for SlotMap storage, [SecSliceMap] for SecondaryMap and [SparseSliceMap] for SparseSecondaryMap respectively.
+
+To allow using [SparseSecondaryMap] this crate is not "no_std" anymore, but I plan to make that an optional feature and restore its no_std status!
 
 ### Description
 
-[SliceMap] provides a container that allows iterating directly all of its items, or iterating through non-overlapping slices of varying sizes. You can only insert new items in groups that will become a new slice.
+[SliceMap] and its type aliases provides a container that allows iterating directly all of its items, or iterating through non-overlapping slices of varying sizes. You can only insert new items in groups that will become a new slice.
 
 ### Example
 
@@ -11,13 +15,13 @@ A good use would be storing the points for polygons with different point counts,
 
 Here's a simpler example with i32 values:
 ```rust
-use slice_map::MainSliceMap;
+use slice_map::SlotSliceMap;
 
 slotmap::new_key_type!{
     pub struct TestKey;
 }
 
-let mut slices = MainSliceMap::<TestKey, i32>::default();
+let mut slices = SlotSliceMap::<TestKey, i32>::default();
 
 // Adding items returns a SliceKey
 let _a = slices.add_items([1, 2, 3, 4, 5]);
