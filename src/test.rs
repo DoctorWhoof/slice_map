@@ -82,9 +82,11 @@ fn test_remove() {
 
 #[test]
 fn non_default_values() {
+    #[derive(Clone)]
     struct Test; // No default implementation
     let mut slices = SlotSliceMap::<TestKey, Test>::new();
-    slices.add_items([Test, Test, Test]);
+    let ref_array = &[Test, Test, Test];
+    slices.add_items(ref_array);
     slices.add_items([Test]);
     assert_eq!(slices.items_len(), 4);
     assert_eq!(slices.slices_len(), 2);

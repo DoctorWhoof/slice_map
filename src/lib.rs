@@ -13,6 +13,7 @@ mod iter;
 pub use iter::*;
 
 use core::{marker::PhantomData, ops::Range};
+use std::ops::Deref;
 use slotmap::{Key, SecondaryMap, SlotMap, SparseSecondaryMap};
 
 extern crate alloc;
@@ -132,15 +133,20 @@ pub type SlotSliceMap<K, V> = SliceMap<K, V, SlotMap<K, Range<u32>>>;
 impl<K, V> SlotSliceMap<K, V>
 where
     K: Key,
+    V: Clone, // Clone is required to handle &V inputs
 {
-    /// Creates a new slice with all items from an iterator of owned V items.
+    /// Creates a new slice with all items from an iterator of owned or borrowed V items.
+    /// Accepts arrays, slices, or any type that implements AsRef<[V]>.
     /// Will panic if the capacity of [u32::MAX] items is reached.
-    pub fn add_items<ITER>(&mut self, new_items: ITER) -> K
+    pub fn add_items<ITEMS>(&mut self, new_items: ITEMS) -> K
     where
-        ITER: IntoIterator<Item = V>,
+        ITEMS: AsRef<[V]>, // Accepts &[V], [V; LEN], or other AsRef<[V]> types
     {
         let start: u32 = self.items.len().try_into().unwrap();
-        self.items.extend(new_items);
+
+        // Extend items with the cloned elements from the input slice
+        self.items.extend(new_items.as_ref().iter().cloned());
+
         let end: u32 = self.items.len().try_into().unwrap();
         self.slices.insert(start..end)
     }
@@ -152,15 +158,20 @@ pub type SecSliceMap<K, V> = SliceMap<K, V, SecondaryMap<K, Range<u32>>>;
 impl<K, V> SecSliceMap<K, V>
 where
     K: Key,
+    V: Clone, // Clone is required to handle &V inputs
 {
-    /// Creates a new slice with all items from an iterator of owned V items.
+    /// Creates a new slice with all items from an iterable of owned or borrowed V items.
+    /// Accepts arrays, slices, or any other AsRef<[V]> type.
     /// Will panic if the capacity of [u32::MAX] items is reached.
-    pub fn add_items<ITER>(&mut self, key: K, new_items: ITER)
+    pub fn add_items<ITEMS>(&mut self, key: K, new_items: ITEMS)
     where
-        ITER: IntoIterator<Item = V>,
+        ITEMS: AsRef<[V]>, // Accepts &[V], [V; LEN], Vec<V>, or other AsRef<[V]> types
     {
         let start: u32 = self.items.len().try_into().unwrap();
-        self.items.extend(new_items);
+
+        // Extend items with the cloned elements from the input slice
+        self.items.extend(new_items.as_ref().iter().cloned());
+
         let end: u32 = self.items.len().try_into().unwrap();
         self.slices.insert(key, start..end);
     }
@@ -172,15 +183,20 @@ pub type SparseSliceMap<K, V> = SliceMap<K, V, SparseSecondaryMap<K, Range<u32>>
 impl<K, V> SparseSliceMap<K, V>
 where
     K: Key,
+    V: Clone, // Clone is required to handle &V inputs
 {
-    /// Creates a new slice with all items from an iterator of owned V items.
+    /// Creates a new slice with all items from an iterable of owned or borrowed V items.
+    /// Accepts arrays, slices, or any other AsRef<[V]> type.
     /// Will panic if the capacity of [u32::MAX] items is reached.
-    pub fn add_items<ITER>(&mut self, key: K, new_items: ITER)
+    pub fn add_items<ITEMS>(&mut self, key: K, new_items: ITEMS)
     where
-        ITER: IntoIterator<Item = V>,
+        ITEMS: AsRef<[V]>, // Accepts &[V], [V; LEN], Vec<V>, or other AsRef<[V]> types
     {
         let start: u32 = self.items.len().try_into().unwrap();
-        self.items.extend(new_items);
+
+        // Extend items with the cloned elements from the input slice
+        self.items.extend(new_items.as_ref().iter().cloned());
+
         let end: u32 = self.items.len().try_into().unwrap();
         self.slices.insert(key, start..end);
     }
