@@ -13,7 +13,6 @@ mod iter;
 pub use iter::*;
 
 use core::{marker::PhantomData, ops::Range};
-use std::ops::Deref;
 use slotmap::{Key, SecondaryMap, SlotMap, SparseSecondaryMap};
 
 extern crate alloc;
