@@ -1,5 +1,5 @@
 ### 0.2.4 Update
-SliceMap is a project driven by another personal project, and its design follows the needs of that project. As a result, I had to go back to the idea of a Generic SliceMap that uses a Storage trait to pick different Storage structs.
+SliceMap is a Rust crate driven by needs of a separate personal project. As a result, I had to go back to the idea of a Generic SliceMap that uses a Storage trait to pick different Storage structs.
 
 Instead of [SliceMap] you should use the new type aliases, [SlotSliceMap] for SlotMap storage, [SecSliceMap] for SecondaryMap and [SparseSliceMap] for SparseSecondaryMap respectively.
 
