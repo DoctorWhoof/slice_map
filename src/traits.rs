@@ -9,6 +9,7 @@ pub trait SliceStorage<K, V>: Default {
     fn iter(&self) -> Box<dyn Iterator<Item = (K, &V)> + '_>;
     fn values(&self) -> Box<dyn Iterator<Item = &V> + '_>;
     fn values_mut(&mut self) -> Box<dyn Iterator<Item = &mut V> + '_>;
+    fn is_empty(&self) -> bool;
 }
 
 impl<K, V> SliceStorage<K, V> for SlotMap<K, V>
@@ -45,6 +46,11 @@ where
     fn values_mut(&mut self) -> Box<dyn Iterator<Item = &mut V> + '_> {
         Box::new(self.values_mut())
     }
+
+    #[inline(always)]
+    fn is_empty(&self) -> bool {
+        self.is_empty()
+    }
 }
 
 impl<K, V> SliceStorage<K, V> for SecondaryMap<K, V>
@@ -79,6 +85,11 @@ where
     #[inline(always)]
     fn values_mut(&mut self) -> Box<dyn Iterator<Item = &mut V> + '_> {
         Box::new(self.values_mut())
+    }
+
+    #[inline(always)]
+    fn is_empty(&self) -> bool {
+        self.is_empty()
     }
 }
 
@@ -115,5 +126,10 @@ where
     #[inline(always)]
     fn values_mut(&mut self) -> Box<dyn Iterator<Item = &mut V> + '_> {
         Box::new(self.values_mut())
+    }
+
+    #[inline(always)]
+    fn is_empty(&self) -> bool {
+        self.is_empty()
     }
 }

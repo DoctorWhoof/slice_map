@@ -70,6 +70,11 @@ where
         self.items.len()
     }
 
+    /// True if no items
+    pub fn is_empty(&self) -> bool {
+        self.items.is_empty()
+    }
+
     /// How many slices are contained in the SliceMap.
     pub fn slices_len(&self) -> usize {
         self.slices.iter().count()
